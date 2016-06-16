@@ -1,0 +1,7 @@
+PYBW.egg-info/
+*pyc
+build/
+dist/
+*~
+.*.c
+.*.h

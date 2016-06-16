@@ -1,0 +1,5 @@
+#!/usr/bin/env python2.7
+import _bw
+
+_bw.getrp('test/test.bw', 'test/test_tss.bed', 'test/out.tab', 10000.0)
+#_bw.getrp('test/42359_treat.bw', 'test/hg38.tss', 'test/out.tab', 10000.0)
