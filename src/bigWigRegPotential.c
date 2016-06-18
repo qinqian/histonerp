@@ -409,6 +409,7 @@ if (bedOut != NULL)
 //    averageFetchingEachBlock(bbi, bedList, fieldCount, f, bedF);
 //else
 averageFetchingEachChrom(bbi, &bedList, fieldCount, f, bedF, alpha);
+bbiFileClose(bbi);
 fclose(f);
 
 if (statsRa != NULL)
