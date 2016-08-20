@@ -26,7 +26,7 @@ python setup.py install --user
 #### test the module:
 
 ``` bash
-getbw
+./getbw
 ``` 
 
 ``` bash
@@ -51,4 +51,3 @@ output demo `-n`, `5th` column is the regulatory potential score from bigWig:
     chr1    11873   11874   NR_046018       208.234170501   DDX11L1 +
     chr1    17436   17437   NR_107063       219.513716641   MIR6859-3       -
     chr1    17436   17437   NR_128720       219.513716641   MIR6859-4       -
-
