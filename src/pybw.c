@@ -16,13 +16,15 @@ getrp(PyObject *self, PyObject *args)
   PyObject *bedfile;   /* bed file name strings */
   PyObject *outfile;   /* bed file name strings */
   PyObject *decay;   /* bed file name strings */
-
+  PyObject *left;   /* bed file name strings */
+  PyObject *right;   /* bed file name strings */
   char *bigWigFile; 
   char *bed;
   char *out;
   double d;
-
-  if (! PyArg_ParseTuple( args, "O!O!O!O!", &PyString_Type, &bigwigfileObj, &PyString_Type, &bedfile, &PyString_Type, &outfile, &PyFloat_Type, &decay)) {
+  int l;
+  int r;
+  if (! PyArg_ParseTuple( args, "O!O!O!O!O!O!", &PyString_Type, &bigwigfileObj, &PyString_Type, &bedfile, &PyString_Type, &outfile, &PyFloat_Type, &decay, &PyInt_Type, &left, &PyInt_Type, &right)) {
     PyErr_SetString( pyError2, "argument fault" );
     return NULL;
   }
@@ -30,10 +32,12 @@ getrp(PyObject *self, PyObject *args)
   bed = PyString_AsString(bedfile);
   out = PyString_AsString(outfile);
   d = PyFloat_AsDouble(decay);
+  l = PyInt_AsLong(left);
+  r = PyInt_AsLong(right);
 
-  printf("%s %s %s %f\n", bigWigFile, bed, out, d);
+  printf("%s %s %s %f %d %d \n", bigWigFile, bed, out, d, l, r);
 
-  bigWigAverageOverBed(bigWigFile, bed, out, d);
+  bigWigAverageOverBed(bigWigFile, bed, out, d, l, r);
 
   Py_INCREF(Py_None);
   return Py_None;

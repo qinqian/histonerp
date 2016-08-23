@@ -51,3 +51,19 @@ output demo `-n`, `5th` column is the regulatory potential score from bigWig:
     chr1    11873   11874   NR_046018       208.234170501   DDX11L1 +
     chr1    17436   17437   NR_107063       219.513716641   MIR6859-3       -
     chr1    17436   17437   NR_128720       219.513716641   MIR6859-4       -
+
+
+#### parameter to delete one specific region
+
+This removal of region does not consider strand, e.g., to delete all promoter +/- 1kb:
+
+``` bash
+_bw.getrp('test/test.bw', 'test/test_tss.bed', 'test/out.tab', 10000.0, -1000, 1000)
+```
+
+Below would delete the downstream 1kb in the gene body for positive strand transcript, but upstream 1kb for negative strand transcript.
+
+``` bash
+_bw.getrp('test/test.bw', 'test/test_tss.bed', 'test/out.tab', 10000.0, 0, 1000)
+```
+

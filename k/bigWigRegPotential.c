@@ -1,3 +1,8 @@
+/* bigWigAverageOverBed - Compute average score of big wig over each bed, which may have introns. */
+
+/* Copyright (C) 2014 The Regents of the University of California 
+ * See README in this or parent directory for licensing information. */
+
 #include "common.h"
 #include "linefile.h"
 #include "hash.h"
@@ -16,33 +21,34 @@ char *statsRa = NULL;
 int sampleAroundCenter = 200000;
 int decay = 10000;
 
-/* void usage() */
-/* /\* Explain usage and exit. *\/ */
-/* { */
-/* errAbort( */
-/*   "bigWigRegPotential v2 - Compute bigWig RegPotential based on weight decay function\n" */
-/*   "usage:\n" */
-/*   "bigWigRegPotential -sampleAroundCenter=200000 in.bw hg38_refseq_TSS.bed out.tab \n " */
-/*   "The output columns are:\n" */
-/*   "   chr - chromosome \n" */
-/*   "   start - gene TSS \n" */
-/*   "   end - gene TSS + 1 \n" */
-/*   "   name - refseq:gene_symbol\n " */
-/*   "   score - weight decay * bigwig read count within range 100kb \n" */
-/*   "Options:\n" */
-/*   "   -decay=N - default 10kb, half weight decay distance, for promoter mark, turn to 1kb  \n" */
-/*   "   -sampleAroundCenter=N - default 200kb (range 100kb), Take sample at region N bases wide centered around bed item, rather\n" */
-/*   "                     than the usual sample in the bed item.\n" */
-/*   ); */
-/* } */
 
-/* static struct optionSpec options[] = { */
-/*    {"bedOut", OPTION_STRING}, */
-/*    {"stats", OPTION_STRING}, */
-/*    {"sampleAroundCenter", OPTION_INT}, */
-/*    {"decay", OPTION_INT}, */
-/*    {NULL, 0}, */
-/* }; */
+void usage()
+/* Explain usage and exit. */
+{
+errAbort(
+  "bigWigRegPotential v2 - Compute bigWig RegPotential based on weight decay function\n"
+  "usage:\n"
+  "bigWigRegPotential -sampleAroundCenter=200000 in.bw hg38_refseq_TSS.bed out.tab \n "
+  "The output columns are:\n"
+  "   chr - chromosome \n"
+  "   start - gene TSS \n"
+  "   end - gene TSS + 1 \n"
+  "   name - refseq:gene_symbol\n "
+  "   score - weight decay * bigwig read count within range 100kb \n"
+  "Options:\n"
+  "   -decay=N - default 10kb, half weight decay distance, for promoter mark, turn to 1kb  \n"
+  "   -sampleAroundCenter=N - default 200kb (range 100kb), Take sample at region N bases wide centered around bed item, rather\n"
+  "                     than the usual sample in the bed item.\n"
+  );
+}
+
+static struct optionSpec options[] = {
+   {"bedOut", OPTION_STRING},
+   {"stats", OPTION_STRING},
+   {"sampleAroundCenter", OPTION_INT},
+   {"decay", OPTION_INT},
+   {NULL, 0},
+};
 
 void checkUniqueNames(struct bed *bedList)
 /* Make sure all names in bedList are unique */
@@ -237,7 +243,7 @@ return bed;
 
 void addBufIntervalInfo(double *valBuf, Bits *covBuf, int start, int center, int end,
 			int *pSumSize, int *pSumCoverage, double *pSumVal, FILE *f, char *name, 
-                        double *weights, char *chr, int leftExclude, int rightExclude)
+                        double *weights, char *chr)
 /* Look at interval in buffers and add result to sums. */
 {
 /* int size1 = end - start; */
@@ -247,9 +253,8 @@ void addBufIntervalInfo(double *valBuf, Bits *covBuf, int start, int center, int
 double sum1 = 0;
 /* double weight = 0.0; */
 /* double alpha = log(1.0/3.0)*10.0; */
-int i, offset;
+int i;
 weights += sampleAroundCenter/2 + start - center;
-if (leftExclude == rightExclude) {
 for (i=start; i<=end; ++i) {
   /* weight = exp(alpha*fabs(i-center)/1e5); */
   /* weight = 2*weight/(1+weight); */
@@ -257,25 +262,13 @@ for (i=start; i<=end; ++i) {
   weights++;
   /* printf("%d\n", i); */
 }
-} else {
-for (i=start; i<=end; ++i) {
-  offset = i-center;
-  if (offset >= leftExclude && offset <= rightExclude) {
-      weights++;
-      continue;
-  }
-  sum1 += valBuf[i]*(*weights);
-  weights++;
-  /* printf("%d\n", i); */
-}
-}
-
+ 
 fprintf(f, "%s\t%d\t%d\t%s\t%f\n", chr, center, center+1, name, sum1);
 /* *pSumVal += sum1; */
 }
 
 void averageFetchingEachChrom(struct bbiFile *bbi, struct bed **pBedList, int fieldCount, 
-	FILE *f, FILE *bedF, float d, int leftExclude, int rightExclude)
+	FILE *f, FILE *bedF)
 /* Do the averaging by sorting bedList by chromosome, and then processing each chromosome
  * at once. Faster for long bedLists. */
 {
@@ -290,8 +283,6 @@ struct bed *bed, *bedList, *nextChrom;
 double *wp, *weights = (double *)malloc((sampleAroundCenter+1)*sizeof(double));
 wp = weights;
 double weight = 0.0;
-
-decay = d;
 double alpha;
 if (decay>0)
 	alpha = log(1.0/3.0)*(100000/decay);
@@ -336,32 +327,32 @@ for (bedList = *pBedList; bedList != NULL; bedList = nextChrom)
 		{
 //int center = (bed->chromStart + bed->chromEnd)/2;
                 int center = bed->chromStart;
-		int left = ((center - (sampleAroundCenter/2))>0)?(center - (sampleAroundCenter/2)):0;
-                int right = (center + sampleAroundCenter/2 >=chrsize)?(chrsize):(center+sampleAroundCenter/2);
+		int left = ((center - sampleAroundCenter/2)>0)?(center - (sampleAroundCenter/2)):0;
+                int right = (center+sampleAroundCenter/2>=chrsize)?(chrsize):(center+sampleAroundCenter/2);
                 /* printf("%d\t%d\t%d\n", left, center, right); */
                 /* verbose(1, "marker\n"); */
 		addBufIntervalInfo(valBuf, covBuf, left, center, right,
-				   &size, &coverage, &sum, f, bed->name, wp, chrom, leftExclude, rightExclude);
+				   &size, &coverage, &sum, f, bed->name, wp, chrom);
 		}
-//	    else
-//		{
-//		if (fieldCount < 12)
-//		    {
-//                      addBufIntervalInfo(valBuf, covBuf, bed->chromStart, (bed->chromStart+bed->chromEnd)/2, bed->chromEnd,
-//                                         &size, &coverage, &sum, f, bed->name, wp, chrom);
-//		    }
-//		else
-//		    {
-//		    int i;
-//		    for (i=0; i<bed->blockCount; ++i)
-//			{
-//			int start = bed->chromStart + bed->chromStarts[i];
-//			int end = start + bed->blockSizes[i];
-//			addBufIntervalInfo(valBuf, covBuf, start, (start+end)/2, end, &size, &coverage, &sum, f, bed->name, wp, chrom);
-//			}
-//		    }
-//		}
-//
+	    else
+		{
+		if (fieldCount < 12)
+		    {
+                      addBufIntervalInfo(valBuf, covBuf, bed->chromStart, (bed->chromStart+bed->chromEnd)/2, bed->chromEnd,
+                                         &size, &coverage, &sum, f, bed->name, wp, chrom);
+		    }
+		else
+		    {
+		    int i;
+		    for (i=0; i<bed->blockCount; ++i)
+			{
+			int start = bed->chromStart + bed->chromStarts[i];
+			int end = start + bed->blockSizes[i];
+			addBufIntervalInfo(valBuf, covBuf, start, (start+end)/2, end, &size, &coverage, &sum, f, bed->name, wp, chrom);
+			}
+		    }
+		}
+
 	    /* Print out result, fudging mean to 0 if no coverage at all. */
 	    /* double mean = 0; */
 	    /* if (coverage > 0) */
@@ -384,24 +375,25 @@ for (bedList = *pBedList; bedList != NULL; bedList = nextChrom)
 	    }
 	}
     }
-bigWigValsOnChromFree(&chromVals);
 bbiChromInfoFreeList(&chromList);
 free(weights);
 verbose(1, "\n");
 }
 
-void bigWigAverageOverBed(char *inBw, char *inBed, char *outTab, float alpha, int left, int right)
+void bigWigAverageOverBed(char *inBw, char *inBed, char *outTab)
 /* bigWigAverageOverBed - Compute average score of big wig over each bed, which may have introns. */
 {
 struct bed *bedList;
 int fieldCount;
 bedLoadAllReturnFieldCount(inBed, &bedList, &fieldCount);
 // checkUniqueNames(bedList);
+
 struct bbiFile *bbi = bigWigFileOpen(inBw);
-FILE *f = fopen(outTab, "w");
+FILE *f = mustOpen(outTab, "w");
 FILE *bedF = NULL;
 if (bedOut != NULL)
     bedF = mustOpen(bedOut, "w");
+
 /* Count up number of blocks in file.  It takes about 1/100th of of second to
  * look up a single block in a bigWig.  On the other hand to stream through
  * the whole file setting a array of doubles takes about 30 seconds, so we change
@@ -412,30 +404,30 @@ if (bedOut != NULL)
  * (This found a bug where the chromosome way wasn't handling beds in chromosomes not
  * covered by the bigWig for instance).  Since this code is not likely to change too
  * much, keeping both implementations in seems reasonable. */
-// int blockCount = countBlocks(bedList, fieldCount);
-// verbose(2, "Got %d blocks, if >= 3000 will use chromosome-at-a-time method\n", blockCount);
+int blockCount = countBlocks(bedList, fieldCount);
+verbose(2, "Got %d blocks, if >= 3000 will use chromosome-at-a-time method\n", blockCount);
 
-//if (blockCount < 3000)
-//    averageFetchingEachBlock(bbi, bedList, fieldCount, f, bedF);
-//else
-averageFetchingEachChrom(bbi, &bedList, fieldCount, f, bedF, alpha, left, right);
-bbiFileClose(bbi);
-fclose(f);
+if (blockCount < 3000)
+    averageFetchingEachBlock(bbi, bedList, fieldCount, f, bedF);
+else
+    averageFetchingEachChrom(bbi, &bedList, fieldCount, f, bedF);
 if (statsRa != NULL)
     outputSums(statsRa, bbi);
+
 carefulClose(&bedF);
+carefulClose(&f);
 }
 
-/* int main(int argc, char *argv[]) */
-/* /\* Process command line. *\/ */
-/* { */
-/* optionInit(&argc, argv, options); */
-/* if (argc != 4) */
-/*     usage(); */
-/* bedOut = optionVal("bedOut", bedOut); */
-/* statsRa = optionVal("stats", statsRa); */
-/* decay = optionInt("decay", decay); */
-/* sampleAroundCenter = optionInt("sampleAroundCenter", sampleAroundCenter); */
-/* bigWigAverageOverBed(argv[1], argv[2], argv[3]); */
-/* return 0; */
-/* } */
+int main(int argc, char *argv[])
+/* Process command line. */
+{
+optionInit(&argc, argv, options);
+if (argc != 4)
+    usage();
+bedOut = optionVal("bedOut", bedOut);
+statsRa = optionVal("stats", statsRa);
+decay = optionInt("decay", decay);
+sampleAroundCenter = optionInt("sampleAroundCenter", sampleAroundCenter);
+bigWigAverageOverBed(argv[1], argv[2], argv[3]);
+return 0;
+}
