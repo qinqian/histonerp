@@ -10,12 +10,12 @@ def getregpot(bw, tss, output, alpha, exclude):
     exclude = exclude.split(',')
     left = int(exclude[0])
     right = int(exclude[1])
+    print(bw, tss, output, alpha, 0, 0)
     if left == right:
-        _bw.getrp(bw, tss, output, alpha, 0, 0)
+        _bw.getrp(bytes(bw,encoding='utf8'), bytes(tss,encoding='utf8'), bytes(output,encoding='utf8'), alpha, 0, 0)
     elif left < right:
-        _bw.getrp(bw, tss, output, alpha, left, right)
+        _bw.getrp(bytes(bw,encoding='utf8'), bytes(tss,encoding='utf8'), bytes(output,encoding='utf8'), alpha, left, right)
     else:
-        print >>sys.stderr, "--exclude left should be smaller than right"
         sys.exit(1)
 
     rp = {}
@@ -28,7 +28,8 @@ def getregpot(bw, tss, output, alpha, exclude):
         for line in inf:
             line = line.strip().split()
             s = line[3].split(':')
-            print >>fout, '\t'.join([line[0], line[1], line[2], s[0], rp['\t'.join(line[:4])], s[1], line[-1]])
+            print('\t'.join([line[0], line[1], line[2], s[0], rp['\t'.join(line[:4])], s[1], line[-1]]), file=fout)
+    fout.close()
 
 if __name__ == "__main__":
     tstart = time.time()
@@ -50,5 +51,5 @@ if __name__ == "__main__":
     hour = int(total/3600)
     minute = int(total - hour*3600)/60
     second = int(total - hour*3600 - minute*60)
-    print 'total time: %s:%s:%s '%(hour, minute, second)
+    print('total time: %s:%s:%s '%(hour, minute, second))
 

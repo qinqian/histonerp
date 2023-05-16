@@ -11,6 +11,7 @@ export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/Cellar/openssl/your_version/
 #### Linux
 ``` bash
 sudo apt-get install openssl
+sudo apt-get install default-libmysqlclient-dev # on vm image with docker
 ```
 
 ### Install the module using:

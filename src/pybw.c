@@ -18,36 +18,34 @@ getrp(PyObject *self, PyObject *args)
   PyObject *decay;   /* bed file name strings */
   PyObject *left;   /* bed file name strings */
   PyObject *right;   /* bed file name strings */
-  char *bigWigFile; 
+  char *bw; 
   char *bed;
   char *out;
   double d;
-  int l;
-  int r;
-  if (! PyArg_ParseTuple( args, "O!O!O!O!O!O!", &PyString_Type, &bigwigfileObj, &PyString_Type, &bedfile, &PyString_Type, &outfile, &PyFloat_Type, &decay, &PyInt_Type, &left, &PyInt_Type, &right)) {
-    PyErr_SetString( pyError2, "argument fault" );
+  long l;
+  long r;
+  //if (! PyArg_ParseTuple( args, "sssdll", &bw, &bed, &out, &d, &l, &r)) {
+  if (! PyArg_ParseTuple(args, "O!O!O!O!O!O!", &PyBytes_Type, &bigwigfileObj, &PyBytes_Type, &bedfile, &PyBytes_Type, &outfile, &PyFloat_Type, &decay, &PyLong_Type, &left, &PyLong_Type, &right)) {
+  //  PyErr_SetString( pyError2, "argument fault!!!check argument?" );
     return NULL;
   }
-  bigWigFile = PyString_AsString(bigwigfileObj);
-  bed = PyString_AsString(bedfile);
-  out = PyString_AsString(outfile);
+
+  bw = PyBytes_AsString(bigwigfileObj);
+  bed = PyBytes_AsString(bedfile);
+  out = PyBytes_AsString(outfile);
   d = PyFloat_AsDouble(decay);
-  l = PyInt_AsLong(left);
-  r = PyInt_AsLong(right);
+  l = PyLong_AsLong(left);
+  r = PyLong_AsLong(right);
 
-  printf("%s %s %s %f %d %d \n", bigWigFile, bed, out, d, l, r);
+  printf("%s\n", bed);
+  printf("%s\n", bw);
+  printf("%s %s %s %f %ld %ld \n", bw, bed, out, d, l, r);
 
-  bigWigAverageOverBed(bigWigFile, bed, out, d, l, r);
+  bigWigAverageOverBed(bw, bed, out, d, l, r);
 
-  Py_INCREF(Py_None);
-  return Py_None;
-
-  /* rpval  = ( PyArrayObject * )PyArray_SimpleNew( 1, dim, PyArray_DOUBLE ); */
-
-  /* for (i=0; i<dataPoints; i++){ */
-  /*   weightObj = PyList_GetItem(weightlistObj, i); */
-  /*   weight[i] = PyFloat_AsDouble(weightObj); */
-  /* } */
+  //Py_INCREF(Py_None);
+  //return Py_None;
+  Py_RETURN_NONE;
 }
 
 /* static PyObject *getrp(PyObject *self, PyObject *args) */
@@ -289,22 +287,28 @@ getrp(PyObject *self, PyObject *args)
 
 PyMethodDef myMethods[] = {
     { "getrp",   getrp,   METH_VARARGS, RP_DOC },
-    /* { "getbw",   getbw,   METH_VARARGS, BW_DOC }, */
     { NULL, NULL, 0, NULL }
 };
 
-PyMODINIT_FUNC init_bw(void)
+static struct PyModuleDef _bw =
+{
+    PyModuleDef_HEAD_INIT,
+    "_bw", /* name of module */
+    "",          /* module documentation, may be NULL */
+    -1,          /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables. */
+    myMethods
+};
+
+PyMODINIT_FUNC PyInit__bw(void)
 {       
+    // http://python3porting.com/cextensions.html
     PyObject *m; //*d;
-    m=Py_InitModule("_bw", myMethods);
-    // import_array();
-    /* pyError1 = PyErr_NewException("getbw.error", NULL, NULL); */
+    m=PyModule_Create(&_bw);
+    if (m == NULL)
+	    return NULL;
     pyError2 = PyErr_NewException("getrp.error", NULL, NULL);
-    /* Py_INCREF(pyError1); */
     Py_INCREF(pyError2);
-    /* PyModule_AddObject(m, "bw error", pyError1); */
     PyModule_AddObject(m, "rp error", pyError2);
-
-    /* d = PyModule_GetDict(m); */
-
+    return m;
 }
+
