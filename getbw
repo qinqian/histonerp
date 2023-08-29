@@ -1,7 +1,9 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 import _bw
+import glob
 
-#_bw.getrp('test/test.bw', 'test/test_tss.bed', 'test/out.tab', 10000.0, 0, 0)
-#_bw.getrp('/data5/DC_results/Result_new3/dataset53709/53709_treat.bw', 'test/hg38.tss', 'test/out.tab', 10000.0, -1000, 1000)
-_bw.getrp('/data5/DC_results/Result_new2/dataset59515/59515_treat.bw', 'test/hg38.tss', 'test/out2.tab', 10000.0, 0, 0)
-#_bw.getrp('test/42359_treat.bw', 'test/hg38.tss', 'test/out.tab', 10000.0)
+#_bw.getrp('/data5/DC_results/Result_new2/dataset59515/59515_treat.bw', 'test/hg38.tss', 'test/out2.tab', 10000.0, 0, 0)
+for bw_file in glob.glob('../atac-seq/*bigwig'):
+    output_file = bytes(bw_file+'.tab', 'utf-8')
+    bw_file = bytes(bw_file, 'utf-8')
+    _bw.getrp(bw_file, b'test/hg38.tss', output_file, 10000.0, 0, 0)
