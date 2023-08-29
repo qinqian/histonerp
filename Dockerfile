@@ -7,18 +7,11 @@ RUN apt-get update -y \
         bzip2 \
         g++ \
         git \
-        gzip \
         libncurses5-dev \
         libpng-dev \
         libtool \
         lmod \
         make \
-        openjdk-8-jdk \
-        python \
-        time \
-        trimmomatic \
-        unzip \
-        wget \
         zlib1g-dev \
         libz-dev \
     && rm -rf /tmp/downloaded_packages/ /tmp/*.rds \
